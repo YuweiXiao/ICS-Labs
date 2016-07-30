@@ -1,0 +1,61 @@
+#Student:Xiao Yuwei
+#ID:5140379066
+#Data:12.10
+
+.pos 0
+init:
+    irmovl Stack, %esp
+    irmovl Stack, %ebp
+    jmp Main
+
+.align 4
+    # Source block
+    src:
+        .long 0x00a
+        .long 0x0b0
+        .long 0xc00
+    # Destination block
+    dest:
+        .long 0x111
+        .long 0x222
+        .long 0x333
+Main:
+    irmovl $0x3, %eax
+    pushl %eax
+    irmovl dest, %eax
+    pushl %eax
+    irmovl src, %eax
+    pushl %eax
+    call Copy_block
+    halt
+
+Copy_block:
+    pushl %ebp
+    pushl %ebx
+    pushl %esi
+    rrmovl %esp, %ebp
+    mrmovl 0x18(%ebp), %ebx     # fetch len
+    mrmovl 0x14(%ebp), %ecx     # dest
+    mrmovl 0x10(%ebp), %edx     # src
+    xorl %eax, %eax
+L1:
+    andl %ebx, %ebx
+    jle End
+    irmovl $0x1, %esi
+    subl %esi, %ebx
+    mrmovl (%edx), %esi
+    rmmovl %esi, (%ecx)
+    xorl %esi, %eax
+    irmovl $0x4, %esi
+    addl %esi, %ecx
+    addl %esi, %edx
+    jmp L1
+End:
+    rrmovl %ebp, %esp
+    popl %esi
+    popl %ebp
+    popl %ebx
+    ret
+
+.pos 0x100
+Stack:

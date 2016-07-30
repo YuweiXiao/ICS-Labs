@@ -1,0 +1,8 @@
+  0x000: 30f204000000 | 	    irmovl $4, %edx
+  0x006: 10           | 	    nop
+  0x007: 10           | 	    nop
+  0x008: 10           | 	    nop
+  0x009: c0f2e0ffffff |             iaddl $-32, %edx
+  0x00f: 10           | 	    nop
+  0x010: 10           | 	    nop
+  0x011: 00           | 	    halt

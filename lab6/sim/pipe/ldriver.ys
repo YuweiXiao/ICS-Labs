@@ -1,0 +1,305 @@
+#######################################################################
+# Test for copying block of size 63;
+#######################################################################
+	.pos 0
+main:	irmovl Stack, %esp  	# Set up stack pointer
+	irmovl Stack, %ebp  	# Set up base pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovl $63, %eax		# src and dst have 63 elements
+	pushl %eax
+	irmovl dest, %eax	# dst array
+	pushl %eax
+	irmovl src, %eax	# src array
+	pushl %eax
+	call ncopy		 
+	halt			# should halt with num nonzeros in %eax
+StartFun:
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len ints to dst.
+# Return the number of positive ints (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Student: XiaoYuwei
+# ID     : 5140379066
+# 
+# Describe how and why you modified the baseline code.
+# 
+# escription:
+#   Data:12.10
+#   1. use iaddl instead of using irmovl and rrmovl
+#   2. for loop unrolling. unrolling factor K=4
+#   3. rearrange some instruction
+#   4. 合并循环展开后value>0判断，使用xorl, a^b>=0 则a,b同号 反之异号
+#   
+#   Data:12.15
+#   5.实现跳表、结合pipeline改进，使得pushxxx ,ret 组合指令bubble最少
+#   6.改进value>0判断，利用mrmovl实现右移操作,从而规避jmp判断
+#       正数转换成0、负数转换成-1. %eax初始为%edx 
+#       局限：value = 0无法判断 但是测试数据里没有0
+#   
+#   Data:12.18
+#   7.修改value>0判断支持更大数组的copy.
+#################################################################
+# Do not modify this portion
+# Function prologue.
+ncopy:	pushl %ebp		# Save old frame pointer
+	rrmovl %esp,%ebp	# Set up new frame pointer
+	pushl %esi		# Save callee-save regs
+	pushl %ebx
+	pushl %edi
+	mrmovl 8(%ebp),%ebx	# src
+	mrmovl 16(%ebp),%edx	# len
+	mrmovl 12(%ebp),%ecx	# dst
+##################################################################
+# You can modify this portion
+	# Loop headedx
+    #
+    rrmovl %edx, %eax
+    iaddl $-4,%edx
+    jge Loop4
+    addl %edx, %edx          # check whether there is element remain
+    addl %edx, %edx
+    mrmovl TTT(%edx), %edx
+    pushl %edx
+    ret
+
+Loop4:
+
+    mrmovl (%ebx), %esi     # round 1
+    mrmovl 2(%ebx), %edi
+    rmmovl %esi, (%ecx)
+    addl %edi, %eax
+
+    mrmovl 4(%ebx), %esi     # round 2
+    mrmovl 6(%ebx), %edi
+    rmmovl %esi, 4(%ecx)
+    addl %edi, %eax
+
+    mrmovl 8(%ebx), %esi     # round 3
+    mrmovl 10(%ebx), %edi
+    rmmovl %esi, 8(%ecx)
+    addl %edi, %eax
+
+    mrmovl 12(%ebx), %esi     # round 4
+    mrmovl 14(%ebx), %edi
+    rmmovl %esi, 12(%ecx)
+    addl %edi, %eax
+
+    iaddl $0x10, %ecx       #update pointer 
+    iaddl $0x10, %ebx
+    iaddl $-4, %edx         #update len
+	jge Loop4			    # if so, goto Loop4:
+    addl %edx, %edx         # jumpTable  %edx *=4  byte -> long
+    addl %edx, %edx
+    mrmovl TTT(%edx), %edx
+    pushl %edx
+    ret
+
+Three:
+    mrmovl 8(%ebx), %esi    
+    mrmovl 10(%ebx), %edi
+    rmmovl %esi, 8(%ecx)
+    addl %edi, %eax 
+
+Two:
+    mrmovl 4(%ebx), %esi
+    mrmovl 6(%ebx), %edi
+    rmmovl %esi, 4(%ecx)
+    addl %edi, %eax 
+
+One:
+    mrmovl (%ebx), %esi
+    mrmovl 2(%ebx), %edi
+    rmmovl %esi, (%ecx)
+    addl %edi, %eax 
+
+DoneHelp:
+    irmovl $0xffff, %edi
+    andl %edi, %eax
+    jmp 0x29
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+   	popl %edi               # Restore callee-save registers
+	popl %ebx
+	popl %esi
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+.align 4
+array:
+    .long 0x115
+    .long 0x101
+    .long 0xed
+    .long 0xd9
+TTT:
+#/* $end ncopy-ys */
+EndFun:
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 4
+src:
+	.long 1
+	.long -2
+	.long 3
+	.long -4
+	.long 5
+	.long -6
+	.long 7
+	.long -8
+	.long 9
+	.long -10
+	.long 11
+	.long 12
+	.long 13
+	.long 14
+	.long -15
+	.long 16
+	.long 17
+	.long 18
+	.long 19
+	.long -20
+	.long -21
+	.long -22
+	.long -23
+	.long 24
+	.long 25
+	.long -26
+	.long -27
+	.long 28
+	.long -29
+	.long 30
+	.long -31
+	.long 32
+	.long -33
+	.long 34
+	.long 35
+	.long 36
+	.long 37
+	.long 38
+	.long 39
+	.long -40
+	.long 41
+	.long 42
+	.long -43
+	.long -44
+	.long 45
+	.long -46
+	.long 47
+	.long -48
+	.long 49
+	.long 50
+	.long -51
+	.long -52
+	.long 53
+	.long -54
+	.long -55
+	.long -56
+	.long -57
+	.long -58
+	.long -59
+	.long -60
+	.long -61
+	.long -62
+	.long -63
+	.long 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.long 0xbcdefa
+dest:
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+Postdest:
+	.long 0xdefabc
+
+.align 4
+# Run time stack
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+
+Stack:

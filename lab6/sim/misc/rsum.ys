@@ -1,0 +1,52 @@
+#Student:Xiao Yuwei
+#ID:5140379066
+#Data:12.10
+
+.pos 0
+init:
+    irmovl Stack, %esp
+    irmovl Stack, %ebp
+    jmp Main
+
+.align 4
+    ele1:
+        .long 0x00a
+        .long ele2
+    ele2:
+        .long 0x0b0
+        .long ele3
+    ele3:
+        .long 0xc00
+        .long 0
+
+Main:
+    irmovl ele1, %eax
+    pushl %eax
+    call Rsum_list
+    halt
+
+Rsum_list:
+    pushl %ebx
+    pushl %ebp
+    rrmovl %esp, %ebp
+    mrmovl 0xc(%ebp), %ecx
+    andl %ecx, %ecx
+    je End
+    mrmovl (%ecx), %ebx
+    mrmovl 0x4(%ecx),%ecx
+    pushl %ecx
+    call Rsum_list
+    addl %ebx, %eax
+    rrmovl %ebp, %esp
+    popl %ebp
+    popl %ebx
+    ret
+End:
+    xorl %eax, %eax
+    rrmovl %ebp, %esp
+    popl %ebp
+    popl %ebx
+    ret
+
+.pos 0x100
+Stack:

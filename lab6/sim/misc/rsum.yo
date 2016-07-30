@@ -1,0 +1,52 @@
+                      | #Student:Xiao Yuwei
+                      | #ID:5140379066
+                      | #Data:12.10
+                      | 
+  0x000:              | .pos 0
+  0x000:              | init:
+  0x000: 30f400010000 |     irmovl Stack, %esp
+  0x006: 30f500010000 |     irmovl Stack, %ebp
+  0x00c: 702c000000   |     jmp Main
+                      | 
+  0x014:              | .align 4
+  0x014:              |     ele1:
+  0x014: 0a000000     |         .long 0x00a
+  0x018: 1c000000     |         .long ele2
+  0x01c:              |     ele2:
+  0x01c: b0000000     |         .long 0x0b0
+  0x020: 24000000     |         .long ele3
+  0x024:              |     ele3:
+  0x024: 000c0000     |         .long 0xc00
+  0x028: 00000000     |         .long 0
+                      | 
+  0x02c:              | Main:
+  0x02c: 30f014000000 |     irmovl ele1, %eax
+  0x032: a00f         |     pushl %eax
+  0x034: 803a000000   |     call Rsum_list
+  0x039: 00           |     halt
+                      | 
+  0x03a:              | Rsum_list:
+  0x03a: a03f         |     pushl %ebx
+  0x03c: a05f         |     pushl %ebp
+  0x03e: 2045         |     rrmovl %esp, %ebp
+  0x040: 50150c000000 |     mrmovl 0xc(%ebp), %ecx
+  0x046: 6211         |     andl %ecx, %ecx
+  0x048: 7369000000   |     je End
+  0x04d: 503100000000 |     mrmovl (%ecx), %ebx
+  0x053: 501104000000 |     mrmovl 0x4(%ecx),%ecx
+  0x059: a01f         |     pushl %ecx
+  0x05b: 803a000000   |     call Rsum_list
+  0x060: 6030         |     addl %ebx, %eax
+  0x062: 2054         |     rrmovl %ebp, %esp
+  0x064: b05f         |     popl %ebp
+  0x066: b03f         |     popl %ebx
+  0x068: 90           |     ret
+  0x069:              | End:
+  0x069: 6300         |     xorl %eax, %eax
+  0x06b: 2054         |     rrmovl %ebp, %esp
+  0x06d: b05f         |     popl %ebp
+  0x06f: b03f         |     popl %ebx
+  0x071: 90           |     ret
+                      | 
+  0x100:              | .pos 0x100
+  0x100:              | Stack:

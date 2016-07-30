@@ -1,0 +1,21 @@
+
+    irmovl Stack, %esp
+    irmovl L2, %ecx
+    pushl %ecx
+    irmovl L1, %ebx
+    pushl %ebx
+    ret
+    halt
+
+
+
+L1:
+    irmovl $1, %eax
+    halt
+
+L2:
+    irmovl $2, %eax
+    halt
+
+.pos 0x100
+Stack:

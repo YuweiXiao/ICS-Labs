@@ -1,0 +1,147 @@
+                      | #/* $begin ncopy-ys */
+                      | ##################################################################
+                      | # ncopy.ys - Copy a src block of len ints to dst.
+                      | # Return the number of positive ints (>0) contained in src.
+                      | #
+                      | # Include your name and ID here.
+                      | #
+                      | # Student: XiaoYuwei
+                      | # ID     : 5140379066
+                      | # Data   :12.10
+                      | # 
+                      | # Describe how and why you modified the baseline code.
+                      | # 
+                      | # escription:
+                      | #   1. use iaddl instead of using irmovl and rrmovl
+                      | #   2. for loop unrolling. unrolling factor K=2
+                      | #   3. rearrange some instruction
+                      | #   4. 简化循环展开后剩余处理，至多执行一次
+                      | #   5. 合并循环展开后value>0判断，使用xorl, a^b>=0 则a,b同号 反之异号
+                      | ##################################################################
+                      | # Do not modify this portion
+                      | # Function prologue.
+  0x000: a05f         | ncopy:	pushl %ebp		# Save old frame pointer
+  0x002: 2045         | 	rrmovl %esp,%ebp	# Set up new frame pointer
+  0x004: a06f         | 	pushl %esi		# Save callee-save regs
+  0x006: a03f         | 	pushl %ebx
+  0x008: a07f         | 	pushl %edi
+  0x00a: 503508000000 | 	mrmovl 8(%ebp),%ebx	# src
+  0x010: 502510000000 | 	mrmovl 16(%ebp),%edx	# len
+  0x016: 50150c000000 | 	mrmovl 12(%ebp),%ecx	# dst
+                      | ##################################################################
+                      | # You can modify this portion
+                      | 	# Loop header
+                      | 
+  0x01c:              | array:
+  0x01c: 11000000     |     .long 0x11 
+  0x020: 11000000     |     .long 0x11
+  0x024: 11000000     |     .long 0x11
+                      | 
+  0x028: 6300         |     xorl %eax,%eax		# count = 0;
+  0x02a: c0f2fcffffff |     iaddl $-4,%edx
+  0x030: 75f4000000   |     jge Loop4
+  0x035: c0f204000000 |     iaddl $4, %edx
+  0x03b: 7645000000   |     jg First
+  0x040: 7084010000   |     jmp Done
+  0x045:              | First:
+  0x045: 506300000000 |     mrmovl (%ebx), %esi	# read val from src...
+  0x04b: 406100000000 | 	rmmovl %esi, (%ecx)	# ...and store it to dst
+  0x051: 6266         | 	andl %esi, %esi		# val <= 0?
+  0x053: 7184010000   |     jle Done
+  0x058: c0f001000000 |     iaddl $1, %eax
+  0x05e: 7084010000   |     jmp Done
+                      | 
+  0x063:              | Twice:
+  0x063: 506300000000 |     mrmovl (%ebx), %esi	    #stage1 read val from src... stage1
+  0x069: 507304000000 |     mrmovl 4(%ebx), %edi	#stage2 read val from src...
+  0x06f: 406100000000 | 	rmmovl %esi, (%ecx)	    #stage1 ...and store it to dst
+  0x075: 407104000000 | 	rmmovl %edi, 4(%ecx)	#stage2 ...and store it to dst
+                      |     # 合并value>0判断
+  0x07b: 6367         |     xorl %esi, %edi
+  0x07d: 758d000000   |     jge TwiceL2
+  0x082: c0f001000000 |     iaddl $1, %eax
+  0x088: 7084010000   |     jmp Done
+  0x08d:              | TwiceL2:
+  0x08d: 6266         |     andl %esi, %esi
+  0x08f: 7184010000   |     jle Done
+  0x094: c0f002000000 |     iaddl $2, %eax
+  0x09a: 7084010000   |     jmp Done
+                      | 
+  0x09f:              | Three:
+  0x09f: 506300000000 |     mrmovl (%ebx), %esi	# read val from src...
+  0x0a5: 406100000000 | 	rmmovl %esi, (%ecx)	# ...and store it to dst
+  0x0ab: 6266         | 	andl %esi, %esi		# val <= 0?
+  0x0ad: 71b8000000   |     jle ThreeTwice
+  0x0b2: c0f001000000 |     iaddl $1, %eax
+                      | 
+  0x0b8:              | ThreeTwice:
+  0x0b8: 506304000000 |     mrmovl 4(%ebx), %esi	    #stage1 read val from src... stage1
+  0x0be: 507308000000 |     mrmovl 8(%ebx), %edi	#stage2 read val from src...
+  0x0c4: 406104000000 | 	rmmovl %esi, 4(%ecx)	    #stage1 ...and store it to dst
+  0x0ca: 407108000000 | 	rmmovl %edi, 8(%ecx)	#stage2 ...and store it to dst
+                      |     # 合并value>0判断
+  0x0d0: 6367         |     xorl %esi, %edi
+  0x0d2: 75e2000000   |     jge ThreeL2
+  0x0d7: c0f001000000 |     iaddl $1, %eax
+  0x0dd: 7084010000   |     jmp Done
+  0x0e2:              | ThreeL2:
+  0x0e2: 6266         |     andl %esi, %esi
+  0x0e4: 7184010000   |     jle Done
+  0x0e9: c0f002000000 |     iaddl $2, %eax
+  0x0ef: 7084010000   |     jmp Done
+                      | 
+                      | 
+  0x0f4:              | Loop4:
+  0x0f4: 506300000000 |     mrmovl (%ebx), %esi	    #stage1 read val from src... stage1
+  0x0fa: c0f310000000 |     iaddl $0x10, %ebx          #stage2
+  0x100: 5073f4ffffff |     mrmovl -12(%ebx), %edi	#stage2 read val from src...
+  0x106: 406100000000 | 	rmmovl %esi, (%ecx)	    #stage1 ...and store it to dst
+  0x10c: 407104000000 | 	rmmovl %edi, 4(%ecx)	#stage2 ...and store it to dst
+                      |    
+                      | # 合并value>0判断
+  0x112: 6367         |     xorl %esi, %edi
+  0x114: 7524010000   |     jge L2
+  0x119: c0f001000000 |     iaddl $1, %eax
+  0x11f: 7031010000   |     jmp L3
+  0x124:              | L2:
+  0x124: 6266         |     andl %esi, %esi
+  0x126: 7131010000   |     jle L3
+  0x12b: c0f002000000 |     iaddl $2, %eax
+                      | 
+  0x131:              | L3:
+  0x131: 5063f8ffffff |     mrmovl -8(%ebx),%esi
+  0x137: c0f110000000 |     iaddl $0x10, %ecx          #stage2
+  0x13d: 5073fcffffff |     mrmovl -4(%ebx), %edi
+  0x143: 4061f8ffffff |     rmmovl %esi, -8(%ecx)
+  0x149: 4071fcffffff |     rmmovl %edi, -4(%ecx)
+                      |  
+  0x14f: 6367         |     xorl %esi, %edi
+  0x151: 7561010000   |     jge L4
+  0x156: c0f001000000 |     iaddl $1, %eax
+  0x15c: 706e010000   |     jmp L5
+  0x161:              | L4:
+  0x161: 6266         |     andl %esi, %esi
+  0x163: 716e010000   |     jle L5
+  0x168: c0f002000000 |     iaddl $2, %eax
+  0x16e:              | L5:
+                      | 
+  0x16e: c0f2fcffffff |     iaddl $-4, %edx         #update len
+  0x174: 75f4000000   | 	jge Loop4			    # if so, goto Loop2:
+  0x179: c0f204000000 |     iaddl $4, %edx          # check whether there is element remain
+  0x17f: 7645000000   |     jg First
+                      | #   fall through
+                      | 
+                      | ##################################################################
+                      | # Do not modify the following section of code
+                      | # Function epilogue.
+  0x184:              | Done:
+  0x184: b07f         | 	popl %edi               # Restore callee-save registers
+  0x186: b03f         | 	popl %ebx
+  0x188: b06f         | 	popl %esi
+  0x18a: 2054         | 	rrmovl %ebp, %esp
+  0x18c: b05f         | 	popl %ebp
+  0x18e: 90           | 	ret
+                      | ##################################################################
+                      | # Keep the following label at the end of your function
+  0x18f:              | End:
+                      | #/* $end ncopy-ys */

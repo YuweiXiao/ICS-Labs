@@ -1,0 +1,418 @@
+#######################################################################
+# Test for copying block of size 20;
+#######################################################################
+	.pos 0
+main:	irmovl Stack, %esp  	# Set up stack pointer
+	irmovl Stack, %ebp  	# Set up base pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovl $20, %eax		# src and dst have 20 elements
+	pushl %eax
+	irmovl dest, %eax	# dst array
+	pushl %eax
+	irmovl src, %eax	# src array
+	pushl %eax
+	call ncopy		 
+	call check	        # Call checker code
+	halt                    # should halt with 0xaaaa in %eax
+StartFun:
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len ints to dst.
+# Return the number of positive ints (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Student: XiaoYuwei
+# ID     : 5140379066
+# Data   :12.10
+# 
+# Describe how and why you modified the baseline code.
+# 
+# escription:
+#   1. use iaddl instead of using irmovl and rrmovl
+#   2. for loop unrolling. unrolling factor K=2
+#   3. rearrange some instruction
+#   4. 简化循环展开后剩余处理，至多执行一次
+#   5. 合并循环展开后value>0判断，使用xorl, a^b>=0 则a,b同号 反之异号
+##################################################################
+# Do not modify this portion
+# Function prologue.
+ncopy:	pushl %ebp		# Save old frame pointer
+	rrmovl %esp,%ebp	# Set up new frame pointer
+	pushl %esi		# Save callee-save regs
+	pushl %ebx
+	pushl %edi
+	mrmovl 8(%ebp),%ebx	# src
+	mrmovl 16(%ebp),%edx	# len
+	mrmovl 12(%ebp),%ecx	# dst
+##################################################################
+# You can modify this portion
+	# Loop header
+    
+    xorl %eax,%eax		# count = 0;
+    iaddl $-8,%edx
+    jge Loop8
+    iaddl $8, %edx
+    jg First
+    jmp Done
+First:
+    mrmovl (%ebx), %esi	# read val from src...
+    mrmovl 4(%ebx), %edi
+	rmmovl %esi, (%ecx)	# ...and store it to dst
+	andl %esi, %esi		# val <= 0?
+    jle Second
+    iaddl $1, %eax
+
+Second:
+    iaddl $-1, %edx
+    je Done
+	rmmovl %edi, 4(%ecx)	# ...and store it to dst
+    mrmovl 8(%ebx), %esi
+	andl %edi, %edi		# val <= 0?
+    jle Third
+    iaddl $1, %eax
+
+Third:
+    iaddl $-1, %edx
+    je Done
+    rmmovl %esi, 8(%ecx)
+    andl %esi, %esi
+    jle Fourth
+    iaddl $1, %eax
+
+Fourth:
+    iaddl $-1, %edx
+    je Done
+    mrmovl 12(%ebx), %esi
+    mrmovl 16(%ebx), %edi
+    rmmovl %esi, 12(%ecx)
+    andl %esi, %esi
+    jle Fifth
+    iaddl $1, %eax
+
+Fifth:
+    iaddl $-1, %edx
+    je Done
+    rmmovl %edi, 16(%ecx)
+    andl %edi, %edi
+    jle Sixth
+    iaddl $1, %eax
+
+Sixth:
+    iaddl $-1, %edx
+    je Done
+    mrmovl 20(%ebx), %esi
+    mrmovl 24(%ebx), %edi
+    rmmovl %esi, 20(%ecx)
+    andl %esi, %esi
+    jle Seventh
+    iaddl $1, %eax
+
+Seventh:
+    iaddl $-1, %edx
+    je Done
+    rmmovl %edi, 24(%ecx)
+    andl %edi, %edi
+    jle Done
+    iaddl $1, %eax
+    jmp Done
+
+Loop8:
+    mrmovl (%ebx), %esi	    #stage1 read val from src... stage1
+    mrmovl 4(%ebx), %edi	#stage2 read val from src...
+	rmmovl %esi, (%ecx)	    #stage1 ...and store it to dst
+	rmmovl %edi, 4(%ecx)	#stage2 ...and store it to dst
+   
+# 合并value>0判断
+    xorl %esi, %edi
+    jge L21
+    iaddl $1, %eax
+    jmp L31
+L21:
+    andl %esi, %esi
+    jle L31
+    iaddl $2, %eax
+
+L31:
+    mrmovl 8(%ebx),%esi
+    mrmovl 12(%ebx), %edi
+    rmmovl %esi, 8(%ecx)
+    rmmovl %edi, 12(%ecx)
+ 
+    xorl %esi, %edi
+    jge L22
+    iaddl $1, %eax
+    jmp L32
+L22:
+    andl %esi, %esi
+    jle L32
+    iaddl $2, %eax
+L32:
+    mrmovl 16(%ebx),%esi
+    mrmovl 20(%ebx), %edi
+    rmmovl %esi, 16(%ecx)
+    rmmovl %edi, 20(%ecx)
+ 
+    xorl %esi, %edi
+    jge L23
+    iaddl $1, %eax
+    jmp L33
+L23:
+    andl %esi, %esi
+    jle L33
+    iaddl $2, %eax
+L33:
+    mrmovl 24(%ebx),%esi
+    mrmovl 28(%ebx), %edi
+    rmmovl %esi, 24(%ecx)
+    rmmovl %edi, 28(%ecx)
+ 
+    xorl %esi, %edi
+    jge L24
+    iaddl $1, %eax
+    jmp L34
+L24:
+    andl %esi, %esi
+    jle L34
+    iaddl $2, %eax
+L34:
+    mrmovl 32(%ebx),%esi
+    mrmovl 36(%ebx), %edi
+    rmmovl %esi, 32(%ecx)
+    rmmovl %edi, 36(%ecx)
+ 
+    xorl %esi, %edi
+    jge L25
+    iaddl $1, %eax
+    jmp L35
+L25:
+    andl %esi, %esi
+    jle L35
+    iaddl $2, %eax
+L35:
+    mrmovl 40(%ebx),%esi
+    mrmovl 44(%ebx), %edi
+    rmmovl %esi, 40(%ecx)
+    rmmovl %edi, 44(%ecx)
+ 
+    xorl %esi, %edi
+    jge L26
+    iaddl $1, %eax
+    jmp L36
+L26:
+    andl %esi, %esi
+    jle L36
+    iaddl $2, %eax
+L36:
+    mrmovl 48(%ebx),%esi
+    mrmovl 52(%ebx), %edi
+    rmmovl %esi, 48(%ecx)
+    rmmovl %edi, 52(%ecx)
+ 
+    xorl %esi, %edi
+    jge L27
+    iaddl $1, %eax
+    jmp L37
+L27:
+    andl %esi, %esi
+    jle L37
+    iaddl $2, %eax
+L37:
+    mrmovl 56(%ebx),%esi
+    mrmovl 60(%ebx), %edi
+    rmmovl %esi, 56(%ecx)
+    rmmovl %edi, 60(%ecx)
+ 
+    xorl %esi, %edi
+    jge L28
+    iaddl $1, %eax
+    jmp L38
+L28:
+    andl %esi, %esi
+    jle L38
+    iaddl $2, %eax
+
+L38:
+    iaddl $0x40, %ebx
+    iaddl $0x40, %ecx
+    iaddl $-8, %edx         #update len
+	jge Loop8			    # if so, goto Loop2:
+    iaddl $8, %edx          # check whether there is element remain
+    jg First
+#   fall through
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	popl %edi               # Restore callee-save registers
+	popl %ebx
+	popl %esi
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
+EndFun:
+#################################################################### 
+# Epilogue code for the correctness testing driver
+####################################################################
+
+# This is the correctness checking code.
+# It checks:
+#   1. %eax has 8.  Set %eax to 0xbbbb if not.
+#   2. The total length of the code is less than or equal to 1000.
+#      Set %eax to 0xcccc if not.
+#   3. The source data was copied to the destination.
+#      Set %eax to 0xdddd if not.
+#   4. The words just before and just after the destination region
+#      were not corrupted.  Set %eax to 0xeeee if not.
+# If all checks pass, then sets %eax to 0xaaaa
+check:
+	pushl %ebp
+	rrmovl %esp,%ebp
+	pushl %esi
+	pushl %ebx
+	pushl %edi
+	# Return value test
+	irmovl $8,%edx
+	subl %edx,%eax
+	je checkb
+	irmovl $0xbbbb,%eax  # Failed test #1
+	jmp cdone
+checkb:
+	# Code length check
+	irmovl EndFun,%eax
+	irmovl StartFun,%edx
+	subl %edx,%eax
+	irmovl $1000,%edx
+	subl %eax,%edx
+	jge checkm
+	irmovl $0xcccc,%eax  # Failed test #2
+	jmp cdone
+checkm:
+	irmovl dest, %edx # Pointer to next destination location
+	irmovl src,%ebx   # Pointer to next source location
+	irmovl $20,%edi  # Count
+	andl %edi,%edi
+	je checkpre         # Skip check if count = 0
+mcloop:
+	mrmovl (%edx),%eax
+	mrmovl (%ebx),%esi
+	subl %esi,%eax
+	je  mok
+	irmovl $0xdddd,%eax # Failed test #3
+	jmp cdone
+mok:
+	irmovl $4,%eax
+	addl %eax,%edx	  # dest ++
+	addl %eax,%ebx    # src++
+	irmovl $1,%eax
+	subl %eax,%edi    # cnt--
+	jg mcloop
+checkpre:
+	# Check for corruption
+	irmovl Predest,%edx
+	mrmovl (%edx), %eax  # Get word before destination
+	irmovl $0xbcdefa, %edx
+	subl %edx,%eax
+	je checkpost
+	irmovl $0xeeee,%eax  # Failed test #4
+	jmp cdone
+checkpost:
+	# Check for corruption
+	irmovl Postdest,%edx
+	mrmovl (%edx), %eax  # Get word after destination
+	irmovl $0xdefabc, %edx
+	subl %edx,%eax
+	je checkok
+	irmovl $0xeeee,%eax # Failed test #4
+	jmp cdone
+checkok:
+	# Successful checks
+	irmovl $0xaaaa,%eax
+cdone:
+	popl %edi
+	popl %ebx
+	popl %esi
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 4
+src:
+	.long -1
+	.long 2
+	.long -3
+	.long -4
+	.long -5
+	.long -6
+	.long -7
+	.long -8
+	.long -9
+	.long -10
+	.long 11
+	.long 12
+	.long 13
+	.long -14
+	.long -15
+	.long 16
+	.long 17
+	.long 18
+	.long 19
+	.long -20
+	.long 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.long 0xbcdefa
+dest:
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+	.long 0xcdefab
+Postdest:
+	.long 0xdefabc
+
+.align 4
+# Run time stack
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+	.long 0
+
+Stack:

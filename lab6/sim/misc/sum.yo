@@ -1,0 +1,45 @@
+                      | #Student:Xiao Yuwei
+                      | #ID:5140379066
+                      | #Data:12.10
+                      | 
+  0x000:              | .pos 0
+  0x000:              | init:
+  0x000: 30f400010000 |     irmovl Stack, %esp
+  0x006: 30f500010000 |     irmovl Stack, %ebp
+  0x00c: 702c000000   |     jmp Main
+                      | 
+  0x014:              | .align 4
+  0x014:              |     ele1:
+  0x014: 0a000000     |         .long 0x00a
+  0x018: 1c000000     |         .long ele2
+  0x01c:              |     ele2:
+  0x01c: b0000000     |         .long 0x0b0
+  0x020: 24000000     |         .long ele3
+  0x024:              |     ele3:
+  0x024: 000c0000     |         .long 0xc00
+  0x028: 00000000     |         .long 0
+                      | 
+  0x02c:              | Main:
+  0x02c: 30f014000000 |     irmovl ele1, %eax
+  0x032: a00f         |     pushl %eax
+  0x034: 803a000000   |     call Sum_list
+  0x039: 00           |     halt
+                      | 
+  0x03a:              | Sum_list:
+  0x03a: a05f         |     pushl %ebp
+  0x03c: 2045         |     rrmovl %esp, %ebp
+  0x03e: 6300         |     xorl %eax, %eax
+  0x040: 501508000000 |     mrmovl 0x8(%ebp), %ecx
+  0x046:              | L1:
+  0x046: 6211         |     andl %ecx, %ecx
+  0x048: 7360000000   |     je End
+  0x04d: 502100000000 |     mrmovl (%ecx), %edx
+  0x053: 6020         |     addl %edx, %eax
+  0x055: 501104000000 |     mrmovl 0x4(%ecx),%ecx
+  0x05b: 7046000000   |     jmp L1
+  0x060:              | End:
+  0x060: b05f         |     popl %ebp
+  0x062: 90           |     ret
+                      | 
+  0x100:              | .pos 0x100
+  0x100:              | Stack:

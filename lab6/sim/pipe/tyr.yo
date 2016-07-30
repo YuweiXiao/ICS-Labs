@@ -1,0 +1,21 @@
+                      | 
+  0x000: 30f400010000 |     irmovl Stack, %esp
+  0x006: 30f11f000000 |     irmovl L2, %ecx
+  0x00c: a01f         |     pushl %ecx
+  0x00e: 30f318000000 |     irmovl L1, %ebx
+  0x014: a03f         |     pushl %ebx
+  0x016: 90           |     ret
+  0x017: 00           |     halt
+                      | 
+                      | 
+                      | 
+  0x018:              | L1:
+  0x018: 30f001000000 |     irmovl $1, %eax
+  0x01e: 00           |     halt
+                      | 
+  0x01f:              | L2:
+  0x01f: 30f002000000 |     irmovl $2, %eax
+  0x025: 00           |     halt
+                      | 
+  0x100:              | .pos 0x100
+  0x100:              | Stack:
